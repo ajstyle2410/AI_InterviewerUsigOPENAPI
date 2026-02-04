@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Interviewer (OpenAI)</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    header {
+      padding: 24px 32px;
+      background: #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    main {
+      padding: 24px 32px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.4);
+    }
+
+    label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+    }
+
+    select, textarea, input, button {
+      width: 100%;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      padding: 10px 12px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      border: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .secondary {
+      background: #1f2937;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .row button {
+      flex: 1;
+    }
+
+    .messages {
+      max-height: 520px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+
+    .bubble.user {
+      align-self: flex-end;
+      background: #2563eb;
+      border-color: #3b82f6;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #cbd5f5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>AI Interviewer</h1>
+      <p class="badge">ChatGPT-style interviewer for technical, HR, and manager rounds</p>
+    </div>
+    <div class="badge">OpenAI API + Speech tools</div>
+  </header>
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>Interview setup</h2>
+        <label for="mode">Interview mode</label>
+        <select id="mode">
+          <option value="TECHNICAL">Technical</option>
+          <option value="HR">HR</option>
+          <option value="MANAGER">Manager</option>
+        </select>
+
+        <label for="experience">Experience level</label>
+        <select id="experience">
+          <option value="FRESHER">Fresher</option>
+          <option value="EXPERIENCED">Experienced</option>
+        </select>
+
+        <label for="prompt">Your answer or question</label>
+        <textarea id="prompt" placeholder="Type or use the mic to answer..."></textarea>
+
+        <div class="row">
+          <button id="send">Send</button>
+          <button id="mic" class="secondary">Start mic</button>
+        </div>
+        <div class="row">
+          <button id="play" class="secondary">Play answer (TTS)</button>
+          <button id="clear" class="secondary">Clear</button>
+        </div>
+
+        <p class="status" id="status">Ready.</p>
+      </section>
+
+      <section class="card">
+        <h2>Conversation</h2>
+        <div class="messages" id="messages"></div>
+        <audio id="tts" controls style="width: 100%; margin-top: 16px; display: none;"></audio>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const promptEl = document.getElementById('prompt');
+    const modeEl = document.getElementById('mode');
+    const experienceEl = document.getElementById('experience');
+    const messagesEl = document.getElementById('messages');
+    const statusEl = document.getElementById('status');
+    const ttsEl = document.getElementById('tts');
+
+    const history = [];
+    let recognition;
+    let lastAssistantReply = '';
+
+    function addMessage(role, content) {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${role}`;
+      bubble.textContent = content;
+      messagesEl.appendChild(bubble);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function sendPrompt() {
+      const prompt = promptEl.value.trim();
+      if (!prompt) return;
+
+      addMessage('user', prompt);
+      history.push({ role: 'user', content: prompt });
+      promptEl.value = '';
+      statusEl.textContent = 'Thinking...';
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          mode: modeEl.value,
+          experience: experienceEl.value,
+          history
+        })
+      });
+
+      const data = await response.json();
+      lastAssistantReply = data.reply;
+      history.push({ role: 'assistant', content: data.reply });
+      addMessage('assistant', data.reply);
+      statusEl.textContent = 'Ready.';
+    }
+
+    function setupMic() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        statusEl.textContent = 'Speech recognition not supported in this browser.';
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        promptEl.value = transcript;
+      };
+
+      recognition.onstart = () => {
+        statusEl.textContent = 'Listening...';
+      };
+
+      recognition.onend = () => {
+        statusEl.textContent = 'Mic stopped.';
+      };
+    }
+
+    async function playReply() {
+      if (!lastAssistantReply) return;
+      statusEl.textContent = 'Generating speech...';
+      const response = await fetch('/api/speech/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ text: lastAssistantReply })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        ttsEl.src = URL.createObjectURL(blob);
+        ttsEl.style.display = 'block';
+        await ttsEl.play();
+        statusEl.textContent = 'Playing response.';
+      } else {
+        statusEl.textContent = 'TTS failed. Check API key.';
+      }
+    }
+
+    document.getElementById('send').addEventListener('click', sendPrompt);
+    document.getElementById('mic').addEventListener('click', () => {
+      if (!recognition) setupMic();
+      if (recognition) recognition.start();
+    });
+    document.getElementById('play').addEventListener('click', playReply);
+    document.getElementById('clear').addEventListener('click', () => {
+      messagesEl.innerHTML = '';
+      history.length = 0;
+      lastAssistantReply = '';
+      statusEl.textContent = 'Cleared.';
+      ttsEl.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

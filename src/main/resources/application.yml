@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  base-url: https://api.openai.com
+  chat-model: gpt-4o-mini
+  speech-model: gpt-4o-mini-tts
+  transcription-model: gpt-4o-mini-transcribe
+  default-voice: alloy
