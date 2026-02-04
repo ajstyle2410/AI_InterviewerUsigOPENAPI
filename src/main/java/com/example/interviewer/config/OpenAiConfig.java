@@ -8,7 +8,7 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
-@EnableConfigurationProperties(OpenAiProperties.class)
+@EnableConfigurationProperties({OpenAiProperties.class, InterviewSettingsProperties.class})
 public class OpenAiConfig {
   @Bean
   public WebClient openAiWebClient(OpenAiProperties properties) {

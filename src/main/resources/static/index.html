@@ -228,6 +228,7 @@
 
           <label for="prompt">Your answer or question</label>
           <textarea id="prompt" maxlength="1000" placeholder="Type or use the mic to answer..."></textarea>
+          <div class="badge" id="promptCount">0 / 1000</div>
           <div class="pill">
             <input type="checkbox" id="questionOnly" />
             <label for="questionOnly" style="text-transform:none; letter-spacing:0; margin:0;">Question-only interviewer</label>
@@ -252,6 +253,7 @@
 
           <label for="answer">Your answer</label>
           <textarea id="answer" maxlength="2000" placeholder="Paste or reuse your answer"></textarea>
+          <div class="badge" id="answerCount">0 / 2000</div>
 
           <div class="row">
             <button id="evaluate">Evaluate answer</button>
@@ -335,6 +337,8 @@
     const searchEl = document.getElementById('search');
     const questionListEl = document.getElementById('questionList');
     const restrictionStatusEl = document.getElementById('restrictionStatus');
+    const promptCountEl = document.getElementById('promptCount');
+    const answerCountEl = document.getElementById('answerCount');
 
     const history = [];
     let recognition;
@@ -347,6 +351,11 @@
       bubble.textContent = content;
       messagesEl.appendChild(bubble);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function updateCounters() {
+      promptCountEl.textContent = `${promptEl.value.length} / 1000`;
+      answerCountEl.textContent = `${answerEl.value.length} / 2000`;
     }
 
     async function sendPrompt() {
@@ -375,6 +384,11 @@
           questionOnly: questionOnlyEl.checked
         })
       });
+
+      if (!response.ok) {
+        statusEl.textContent = 'Request failed. Please shorten the message or try again.';
+        return;
+      }
 
       const data = await response.json();
       lastAssistantReply = data.reply;
@@ -457,6 +471,11 @@
         })
       });
 
+      if (!response.ok) {
+        feedbackEl.textContent = 'Evaluation failed. Please shorten the answer.';
+        return;
+      }
+
       const data = await response.json();
       scoreEl.textContent = `${data.scorePercent}%`;
       feedbackEl.textContent = `Grammar: ${data.grammarIssues?.join('; ') || 'None'} | Improvements: ${data.improvements?.join('; ') || 'None'}`;
@@ -521,9 +540,12 @@
       restrictionStatusEl.textContent = 'Restrictions: max 1000 chars per message, one question at a time, stay relevant, avoid sensitive data.';
     });
 
+    promptEl.addEventListener('input', updateCounters);
+    answerEl.addEventListener('input', updateCounters);
     modeEl.addEventListener('change', loadQuestions);
     experienceEl.addEventListener('change', loadQuestions);
 
+    updateCounters();
     loadQuestions();
   </script>
 </body>
