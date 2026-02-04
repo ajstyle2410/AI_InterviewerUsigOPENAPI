@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Interviewer (OpenAI)</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    header {
+      padding: 24px 32px;
+      background: #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    main {
+      padding: 24px 32px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: 24px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.4);
+    }
+
+    label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+    }
+
+    select, textarea, input, button {
+      width: 100%;
+      margin-top: 8px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      padding: 10px 12px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      border: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .secondary {
+      background: #1f2937;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .row button {
+      flex: 1;
+    }
+
+    .messages {
+      max-height: 520px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+
+    .bubble.user {
+      align-self: flex-end;
+      background: #2563eb;
+      border-color: #3b82f6;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #cbd5f5;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .question-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .question-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      display: grid;
+      gap: 8px;
+    }
+
+    .virtual-room {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .tile {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .tile span {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .score {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>AI Interviewer</h1>
+      <p class="badge">ChatGPT-style interviewer for technical, HR, and manager rounds</p>
+    </div>
+    <div class="badge">OpenAI API + Speech tools</div>
+  </header>
+  <main>
+    <div class="grid">
+      <div class="column">
+        <section class="card">
+          <h2>Interview setup</h2>
+          <label for="mode">Interview mode</label>
+          <select id="mode">
+            <option value="TECHNICAL">Technical</option>
+            <option value="HR">HR</option>
+            <option value="MANAGER">Manager</option>
+          </select>
+
+          <label for="experience">Experience level</label>
+          <select id="experience">
+            <option value="FRESHER">Fresher</option>
+            <option value="EXPERIENCED">Experienced</option>
+          </select>
+
+          <label for="prompt">Your answer or question</label>
+          <textarea id="prompt" maxlength="1000" placeholder="Type or use the mic to answer..."></textarea>
+          <div class="pill">
+            <input type="checkbox" id="questionOnly" />
+            <label for="questionOnly" style="text-transform:none; letter-spacing:0; margin:0;">Question-only interviewer</label>
+          </div>
+
+          <div class="row">
+            <button id="send">Send</button>
+            <button id="mic" class="secondary">Start mic</button>
+          </div>
+          <div class="row">
+            <button id="play" class="secondary">Play answer (TTS)</button>
+            <button id="clear" class="secondary">Clear</button>
+          </div>
+
+          <p class="status" id="status">Ready. Max 1000 characters per message.</p>
+        </section>
+
+        <section class="card">
+          <h2>Answer evaluation</h2>
+          <label for="question">Interview question</label>
+          <input id="question" placeholder="Paste the interviewer question" maxlength="800" />
+
+          <label for="answer">Your answer</label>
+          <textarea id="answer" maxlength="2000" placeholder="Paste or reuse your answer"></textarea>
+
+          <div class="row">
+            <button id="evaluate">Evaluate answer</button>
+            <button id="useLast" class="secondary">Use last answer</button>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="badge">Score</div>
+              <div class="score" id="score">--</div>
+            </div>
+            <div style="flex: 1;">
+              <div class="badge">Grammar / Improvements</div>
+              <div id="feedback" class="badge">Awaiting evaluation.</div>
+            </div>
+          </div>
+          <div class="status" id="corrected"></div>
+        </section>
+
+        <section class="card">
+          <h2>Top questions</h2>
+          <label for="search">Search top-ranked questions</label>
+          <input id="search" placeholder="Search by keyword (e.g., leadership, SQL)" />
+          <div class="row">
+            <button id="searchBtn" class="secondary">Search</button>
+            <button id="refreshBtn" class="secondary">Refresh</button>
+          </div>
+          <div class="question-list" id="questionList"></div>
+        </section>
+      </div>
+
+      <div class="column">
+        <section class="card">
+          <h2>Conversation</h2>
+          <div class="messages" id="messages"></div>
+          <audio id="tts" controls style="width: 100%; margin-top: 16px; display: none;"></audio>
+        </section>
+
+        <section class="card">
+          <h2>Virtual interview room</h2>
+          <p class="badge">Teams-style live view for interviewer + candidate (visual-only)</p>
+          <div class="virtual-room">
+            <div class="tile">
+              <strong>Interviewer</strong>
+              <span>Audio: Live</span>
+              <span>Camera: On</span>
+            </div>
+            <div class="tile">
+              <strong>You (Candidate)</strong>
+              <span>Audio: Live</span>
+              <span>Camera: Off</span>
+            </div>
+            <div class="tile">
+              <strong>Notes</strong>
+              <span id="roomNotes">Stay concise. Answer in STAR format.</span>
+            </div>
+          </div>
+          <div class="row">
+            <button id="join" class="secondary">Join call</button>
+            <button id="rules" class="secondary">Show restrictions</button>
+          </div>
+          <div class="status" id="restrictionStatus"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const promptEl = document.getElementById('prompt');
+    const modeEl = document.getElementById('mode');
+    const experienceEl = document.getElementById('experience');
+    const messagesEl = document.getElementById('messages');
+    const statusEl = document.getElementById('status');
+    const ttsEl = document.getElementById('tts');
+    const questionOnlyEl = document.getElementById('questionOnly');
+    const questionEl = document.getElementById('question');
+    const answerEl = document.getElementById('answer');
+    const scoreEl = document.getElementById('score');
+    const feedbackEl = document.getElementById('feedback');
+    const correctedEl = document.getElementById('corrected');
+    const searchEl = document.getElementById('search');
+    const questionListEl = document.getElementById('questionList');
+    const restrictionStatusEl = document.getElementById('restrictionStatus');
+
+    const history = [];
+    let recognition;
+    let lastAssistantReply = '';
+    let lastUserAnswer = '';
+
+    function addMessage(role, content) {
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${role}`;
+      bubble.textContent = content;
+      messagesEl.appendChild(bubble);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function sendPrompt() {
+      const prompt = promptEl.value.trim();
+      if (!prompt) return;
+
+      if (prompt.length > 1000) {
+        statusEl.textContent = 'Message too long. Please keep under 1000 characters.';
+        return;
+      }
+
+      addMessage('user', prompt);
+      history.push({ role: 'user', content: prompt });
+      lastUserAnswer = prompt;
+      promptEl.value = '';
+      statusEl.textContent = 'Thinking...';
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          mode: modeEl.value,
+          experience: experienceEl.value,
+          history,
+          questionOnly: questionOnlyEl.checked
+        })
+      });
+
+      const data = await response.json();
+      lastAssistantReply = data.reply;
+      history.push({ role: 'assistant', content: data.reply });
+      addMessage('assistant', data.reply);
+      if (data.reply.trim().endsWith('?')) {
+        questionEl.value = data.reply.trim();
+      }
+      statusEl.textContent = 'Ready.';
+    }
+
+    function setupMic() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        statusEl.textContent = 'Speech recognition not supported in this browser.';
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        promptEl.value = transcript;
+      };
+
+      recognition.onstart = () => {
+        statusEl.textContent = 'Listening...';
+      };
+
+      recognition.onend = () => {
+        statusEl.textContent = 'Mic stopped.';
+      };
+    }
+
+    async function playReply() {
+      if (!lastAssistantReply) return;
+      statusEl.textContent = 'Generating speech...';
+      const response = await fetch('/api/speech/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ text: lastAssistantReply })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        ttsEl.src = URL.createObjectURL(blob);
+        ttsEl.style.display = 'block';
+        await ttsEl.play();
+        statusEl.textContent = 'Playing response.';
+      } else {
+        statusEl.textContent = 'TTS failed. Check API key.';
+      }
+    }
+
+    async function evaluateAnswer() {
+      const question = questionEl.value.trim();
+      const answer = answerEl.value.trim();
+
+      if (!question || !answer) {
+        feedbackEl.textContent = 'Please provide both question and answer.';
+        return;
+      }
+
+      feedbackEl.textContent = 'Evaluating...';
+      scoreEl.textContent = '--';
+      correctedEl.textContent = '';
+
+      const response = await fetch('/api/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          answer,
+          mode: modeEl.value,
+          experience: experienceEl.value
+        })
+      });
+
+      const data = await response.json();
+      scoreEl.textContent = `${data.scorePercent}%`;
+      feedbackEl.textContent = `Grammar: ${data.grammarIssues?.join('; ') || 'None'} | Improvements: ${data.improvements?.join('; ') || 'None'}`;
+      correctedEl.textContent = data.correctedAnswer ? `Suggested correction: ${data.correctedAnswer}` : '';
+    }
+
+    async function loadQuestions() {
+      const params = new URLSearchParams({
+        mode: modeEl.value,
+        experience: experienceEl.value,
+        q: searchEl.value || '',
+        limit: '5'
+      });
+
+      const response = await fetch(`/api/questions?${params.toString()}`);
+      const data = await response.json();
+      questionListEl.innerHTML = '';
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'question-item';
+        card.innerHTML = `
+          <strong>${item.question}</strong>
+          <span class="badge">Rank: ${item.rank}</span>
+          <button class="secondary" data-question="${item.question}">Ask this</button>
+        `;
+        card.querySelector('button').addEventListener('click', () => {
+          questionEl.value = item.question;
+          promptEl.value = item.question;
+        });
+        questionListEl.appendChild(card);
+      });
+    }
+
+    document.getElementById('send').addEventListener('click', sendPrompt);
+    document.getElementById('mic').addEventListener('click', () => {
+      if (!recognition) setupMic();
+      if (recognition) recognition.start();
+    });
+    document.getElementById('play').addEventListener('click', playReply);
+    document.getElementById('clear').addEventListener('click', () => {
+      messagesEl.innerHTML = '';
+      history.length = 0;
+      lastAssistantReply = '';
+      lastUserAnswer = '';
+      statusEl.textContent = 'Cleared.';
+      ttsEl.style.display = 'none';
+    });
+    document.getElementById('evaluate').addEventListener('click', evaluateAnswer);
+    document.getElementById('useLast').addEventListener('click', () => {
+      answerEl.value = lastUserAnswer;
+    });
+    document.getElementById('searchBtn').addEventListener('click', loadQuestions);
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      searchEl.value = '';
+      loadQuestions();
+    });
+    document.getElementById('join').addEventListener('click', () => {
+      restrictionStatusEl.textContent = 'Call joined. Keep responses under 2 minutes and focus on impact.';
+    });
+    document.getElementById('rules').addEventListener('click', () => {
+      restrictionStatusEl.textContent = 'Restrictions: max 1000 chars per message, one question at a time, stay relevant, avoid sensitive data.';
+    });
+
+    modeEl.addEventListener('change', loadQuestions);
+    experienceEl.addEventListener('change', loadQuestions);
+
+    loadQuestions();
+  </script>
+</body>
+</html>
