@@ -4,10 +4,11 @@ import com.example.interviewer.config.OpenAiProperties;
 import java.util.Map;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
-import org.springframework.http.codec.multipart.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 @Service
 public class OpenAiSpeechService {
@@ -20,15 +21,14 @@ public class OpenAiSpeechService {
   }
 
   public String transcribe(byte[] audioBytes, String filename) {
-    MultipartBodyBuilder builder = new MultipartBodyBuilder();
-    builder.part("file", new NamedByteArrayResource(audioBytes, filename))
-        .contentType(MediaType.APPLICATION_OCTET_STREAM);
-    builder.part("model", properties.transcriptionModel());
+    MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+    parts.add("file", new NamedByteArrayResource(audioBytes, filename));
+    parts.add("model", properties.transcriptionModel());
 
     Map<String, Object> response = webClient.post()
         .uri("/v1/audio/transcriptions")
         .contentType(MediaType.MULTIPART_FORM_DATA)
-        .body(BodyInserters.fromMultipartData(builder.build()))
+        .body(BodyInserters.fromMultipartData(parts))
         .retrieve()
         .bodyToMono(Map.class)
         .block();

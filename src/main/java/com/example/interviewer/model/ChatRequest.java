@@ -2,11 +2,16 @@ package com.example.interviewer.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record ChatRequest(
-    @NotBlank String prompt,
+    @NotBlank @Size(max = 1000) String prompt,
     @NotNull InterviewMode mode,
     @NotNull ExperienceLevel experience,
-    List<ChatMessage> history
+    @Size(max = 20) List<ChatMessage> history,
+    Boolean questionOnly,
+    @Size(max = 200) String scenario,
+    @Size(max = 200) String goal,
+    @Size(max = 60) String tone
 ) {}

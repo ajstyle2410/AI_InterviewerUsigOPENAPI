@@ -24,7 +24,20 @@ public class OpenAiChatService {
 
   public ChatResponse chat(ChatRequest request) {
     List<Map<String, String>> messages = new ArrayList<>();
-    messages.add(Map.of("role", "system", "content", promptBuilder.systemPrompt(request.mode(), request.experience())));
+    boolean questionOnly = Boolean.TRUE.equals(request.questionOnly());
+    messages.add(Map.of(
+        "role",
+        "system",
+        "content",
+        promptBuilder.systemPrompt(
+            request.mode(),
+            request.experience(),
+            questionOnly,
+            request.scenario(),
+            request.goal(),
+            request.tone()
+        )
+    ));
 
     if (request.history() != null) {
       for (ChatMessage message : request.history()) {

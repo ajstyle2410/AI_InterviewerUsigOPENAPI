@@ -1,9 +1,9 @@
 package com.example.interviewer.controller;
 
-import com.example.interviewer.model.ChatRequest;
-import com.example.interviewer.model.ChatResponse;
+import com.example.interviewer.model.EvaluateRequest;
+import com.example.interviewer.model.EvaluateResponse;
 import com.example.interviewer.service.InputRestrictionService;
-import com.example.interviewer.service.OpenAiChatService;
+import com.example.interviewer.service.OpenAiEvaluationService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,19 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/chat")
-public class ChatController {
-  private final OpenAiChatService chatService;
+@RequestMapping("/api/evaluate")
+public class EvaluateController {
+  private final OpenAiEvaluationService evaluationService;
   private final InputRestrictionService restrictionService;
 
-  public ChatController(OpenAiChatService chatService, InputRestrictionService restrictionService) {
-    this.chatService = chatService;
+  public EvaluateController(OpenAiEvaluationService evaluationService, InputRestrictionService restrictionService) {
+    this.evaluationService = evaluationService;
     this.restrictionService = restrictionService;
   }
 
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-  public ChatResponse chat(@Valid @RequestBody ChatRequest request) {
-    restrictionService.validateChat(request);
-    return chatService.chat(request);
+  public EvaluateResponse evaluate(@Valid @RequestBody EvaluateRequest request) {
+    restrictionService.validateEvaluate(request);
+    return evaluationService.evaluate(request);
   }
 }
