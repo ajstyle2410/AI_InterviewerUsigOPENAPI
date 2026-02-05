@@ -12,6 +12,7 @@ This project provides a ChatGPT-style interview coach for technical, HR, and man
 - Top-ranked question search and interviewer-style restrictions
 - Simple web UI with mic input (browser speech recognition)
 - Server-side input restrictions with configurable limits
+- Practice scenarios, tone controls, auto-play TTS, and timer controls
 
 ## Requirements
 - Java 17+

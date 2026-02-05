@@ -220,6 +220,26 @@
             <option value="MANAGER">Manager</option>
           </select>
 
+          <label for="scenario">Practice scenario</label>
+          <select id="scenario">
+            <option value="">Open interview</option>
+            <option value="Mock interview: introduction + follow-ups">Mock interview: introduction + follow-ups</option>
+            <option value="Role-play: hiring manager screen">Role-play: hiring manager screen</option>
+            <option value="Role-play: project deep dive">Role-play: project deep dive</option>
+            <option value="Role-play: behavioral STAR">Role-play: behavioral STAR</option>
+          </select>
+
+          <label for="goal">Session goal</label>
+          <input id="goal" maxlength="200" placeholder="E.g., concise answers, highlight impact, improve grammar" />
+
+          <label for="tone">Coach tone</label>
+          <select id="tone">
+            <option value="">Standard</option>
+            <option value="Supportive and encouraging">Supportive and encouraging</option>
+            <option value="Direct and concise">Direct and concise</option>
+            <option value="Challenging and probing">Challenging and probing</option>
+          </select>
+
           <label for="experience">Experience level</label>
           <select id="experience">
             <option value="FRESHER">Fresher</option>
@@ -233,6 +253,18 @@
             <input type="checkbox" id="questionOnly" />
             <label for="questionOnly" style="text-transform:none; letter-spacing:0; margin:0;">Question-only interviewer</label>
           </div>
+          <div class="pill">
+            <input type="checkbox" id="autoPlay" />
+            <label for="autoPlay" style="text-transform:none; letter-spacing:0; margin:0;">Auto-play reply</label>
+          </div>
+
+          <label for="timer">Practice timer (minutes)</label>
+          <div class="row">
+            <input id="timer" type="number" min="1" max="10" value="2" />
+            <button id="timerStart" class="secondary">Start</button>
+            <button id="timerStop" class="secondary">Stop</button>
+          </div>
+          <div class="badge" id="timerStatus">Timer ready.</div>
 
           <div class="row">
             <button id="send">Send</button>
@@ -339,11 +371,19 @@
     const restrictionStatusEl = document.getElementById('restrictionStatus');
     const promptCountEl = document.getElementById('promptCount');
     const answerCountEl = document.getElementById('answerCount');
+    const scenarioEl = document.getElementById('scenario');
+    const goalEl = document.getElementById('goal');
+    const toneEl = document.getElementById('tone');
+    const autoPlayEl = document.getElementById('autoPlay');
+    const timerEl = document.getElementById('timer');
+    const timerStatusEl = document.getElementById('timerStatus');
 
     const history = [];
     let recognition;
     let lastAssistantReply = '';
     let lastUserAnswer = '';
+    let timerInterval;
+    let remainingSeconds = 0;
 
     function addMessage(role, content) {
       const bubble = document.createElement('div');
@@ -381,7 +421,10 @@
           mode: modeEl.value,
           experience: experienceEl.value,
           history,
-          questionOnly: questionOnlyEl.checked
+          questionOnly: questionOnlyEl.checked,
+          scenario: scenarioEl.value,
+          goal: goalEl.value,
+          tone: toneEl.value
         })
       });
 
@@ -396,6 +439,9 @@
       addMessage('assistant', data.reply);
       if (data.reply.trim().endsWith('?')) {
         questionEl.value = data.reply.trim();
+      }
+      if (autoPlayEl.checked) {
+        await playReply();
       }
       statusEl.textContent = 'Ready.';
     }
@@ -538,6 +584,26 @@
     });
     document.getElementById('rules').addEventListener('click', () => {
       restrictionStatusEl.textContent = 'Restrictions: max 1000 chars per message, one question at a time, stay relevant, avoid sensitive data.';
+    });
+    document.getElementById('timerStart').addEventListener('click', () => {
+      const minutes = Math.min(Math.max(parseInt(timerEl.value || '2', 10), 1), 10);
+      remainingSeconds = minutes * 60;
+      timerStatusEl.textContent = `Timer running: ${minutes}:00`;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        remainingSeconds -= 1;
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        timerStatusEl.textContent = `Timer running: ${mins}:${secs.toString().padStart(2, '0')}`;
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          timerStatusEl.textContent = 'Timer done. Please wrap up your answer.';
+        }
+      }, 1000);
+    });
+    document.getElementById('timerStop').addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerStatusEl.textContent = 'Timer stopped.';
     });
 
     promptEl.addEventListener('input', updateCounters);

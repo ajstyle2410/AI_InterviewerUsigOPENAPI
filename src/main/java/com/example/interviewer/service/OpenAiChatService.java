@@ -29,7 +29,14 @@ public class OpenAiChatService {
         "role",
         "system",
         "content",
-        promptBuilder.systemPrompt(request.mode(), request.experience(), questionOnly)
+        promptBuilder.systemPrompt(
+            request.mode(),
+            request.experience(),
+            questionOnly,
+            request.scenario(),
+            request.goal(),
+            request.tone()
+        )
     ));
 
     if (request.history() != null) {

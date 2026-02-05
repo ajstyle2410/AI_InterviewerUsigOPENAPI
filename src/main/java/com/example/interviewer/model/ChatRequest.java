@@ -10,5 +10,8 @@ public record ChatRequest(
     @NotNull InterviewMode mode,
     @NotNull ExperienceLevel experience,
     @Size(max = 20) List<ChatMessage> history,
-    Boolean questionOnly
+    Boolean questionOnly,
+    @Size(max = 200) String scenario,
+    @Size(max = 200) String goal,
+    @Size(max = 60) String tone
 ) {}
