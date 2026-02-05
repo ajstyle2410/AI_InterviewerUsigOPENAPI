@@ -13,6 +13,15 @@ AI interview practice tool with role-play sessions, pronunciation coaching, gram
 - Top-ranked question search
 - Mic input and TTS playback
 - Session controls: scenario, goal, tone, timer, question-only mode
+This project provides a ChatGPT-style interview coach for technical, HR, and manager rounds. It supports freshers and experienced candidates, offers a chat interface, and includes speech-to-text and text-to-speech hooks with the OpenAI API.
+
+## Features
+- Interview mode selection (Technical/HR/Manager)
+- Fresher vs experienced interview tailoring
+- Chat history context for follow-up questions
+- Speech transcription endpoint (OpenAI audio transcribe)
+- Text-to-speech endpoint (OpenAI audio speech)
+- Simple web UI with mic input (browser speech recognition)
 
 ## Requirements
 - Java 17+
@@ -20,6 +29,8 @@ AI interview practice tool with role-play sessions, pronunciation coaching, gram
 - OpenAI API key
 
 ## Configuration
+Set your API key as an environment variable:
+
 ```bash
 export OPENAI_API_KEY=your_key_here
 ```

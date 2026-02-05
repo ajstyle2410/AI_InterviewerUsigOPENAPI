@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+openai:
+  api-key: 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
+  base-url: https://api.openai.com
+  chat-model: gpt-4o-mini
+  speech-model: gpt-4o-mini-tts
+  transcription-model: gpt-4o-mini-transcribe
+  default-voice: alloy
