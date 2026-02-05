@@ -1,18 +1,18 @@
 # AI Interviewer (OpenAI + Spring Boot)
 
-This project provides a ChatGPT-style interview coach for technical, HR, and manager rounds. It supports freshers and experienced candidates, offers a chat interface, and includes speech-to-text and text-to-speech hooks with the OpenAI API.
+AI interview practice tool with role-play sessions, pronunciation coaching, grammar correction, chat, evaluation, and speech support.
 
 ## Features
-- Interview mode selection (Technical/HR/Manager)
-- Fresher vs experienced interview tailoring
-- Chat history context for follow-up questions
-- Speech transcription endpoint (OpenAI audio transcribe)
-- Text-to-speech endpoint (OpenAI audio speech)
-- Answer evaluation with grammar feedback and score
-- Top-ranked question search and interviewer-style restrictions
-- Simple web UI with mic input (browser speech recognition)
-- Server-side input restrictions with configurable limits
-- Practice scenarios, tone controls, auto-play TTS, and timer controls
+- Technical / HR / Manager interview modes
+- Fresher and experienced flows
+- Role-play starter with interviewer role + company context
+- Pronunciation guide (IPA, syllables, tips, practice lines)
+- Pronunciation practice injection into chat
+- Grammar correction endpoint for quick answer cleanup
+- Answer evaluation with score + improvement suggestions
+- Top-ranked question search
+- Mic input and TTS playback
+- Session controls: scenario, goal, tone, timer, question-only mode
 
 ## Requirements
 - Java 17+
@@ -20,8 +20,6 @@ This project provides a ChatGPT-style interview coach for technical, HR, and man
 - OpenAI API key
 
 ## Configuration
-Set your API key as an environment variable:
-
 ```bash
 export OPENAI_API_KEY=your_key_here
 ```
@@ -31,7 +29,7 @@ export OPENAI_API_KEY=your_key_here
 mvn spring-boot:run
 ```
 
-Visit: `http://localhost:8080`
+Open: http://localhost:8080
 
 ## API Examples
 
@@ -39,40 +37,26 @@ Visit: `http://localhost:8080`
 ```bash
 curl -X POST http://localhost:8080/api/chat \
   -H 'Content-Type: application/json' \
-  -d '{
-    "prompt": "Tell me about yourself.",
-    "mode": "HR",
-    "experience": "FRESHER",
-    "history": []
-  }'
+  -d '{"prompt":"Tell me about yourself.","mode":"HR","experience":"FRESHER","history":[]}'
 ```
 
-### Transcribe
+### Role-play starter
 ```bash
-curl -X POST http://localhost:8080/api/speech/transcribe \
-  -F "file=@sample.wav"
-```
-
-### Speak
-```bash
-curl -X POST http://localhost:8080/api/speech/speak \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'text=Hello'
-```
-
-### Evaluate
-```bash
-curl -X POST http://localhost:8080/api/evaluate \
+curl -X POST http://localhost:8080/api/coach/roleplay/start \
   -H 'Content-Type: application/json' \
-  -d '{
-    "question": "Tell me about yourself.",
-    "answer": "I am a final year student ...",
-    "mode": "HR",
-    "experience": "FRESHER"
-  }'
+  -d '{"mode":"TECHNICAL","experience":"EXPERIENCED","interviewerRole":"Engineering Manager"}'
 ```
 
-### Top questions
+### Pronunciation guide
 ```bash
-curl "http://localhost:8080/api/questions?mode=TECHNICAL&experience=EXPERIENCED&q=design&limit=5"
+curl -X POST http://localhost:8080/api/coach/pronunciation \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"stakeholder communication"}'
+```
+
+### Grammar correction
+```bash
+curl -X POST http://localhost:8080/api/coach/grammar \
+  -H 'Content-Type: application/json' \
+  -d '{"answer":"I has leaded a project"}'
 ```
